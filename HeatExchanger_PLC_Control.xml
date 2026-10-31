@@ -1,0 +1,1328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project xmlns="http://www.plcopen.org/xml/tc6_0200">
+  <fileHeader companyName="" productName="CODESYS" productVersion="CODESYS V3.5 SP22 Patch 4" creationDateTime="2026-10-29T16:53:11.6519631" />
+  <contentHeader name="HeatExchanger_PLC_Control.project" modificationDateTime="2026-10-29T16:50:30.2076377">
+    <coordinateInfo>
+      <fbd>
+        <scaling x="1" y="1" />
+      </fbd>
+      <ld>
+        <scaling x="1" y="1" />
+      </ld>
+      <sfc>
+        <scaling x="1" y="1" />
+      </sfc>
+    </coordinateInfo>
+    <addData>
+      <data name="http://www.3s-software.com/plcopenxml/projectinformation" handleUnknown="implementation">
+        <ProjectInformation />
+      </data>
+    </addData>
+  </contentHeader>
+  <types>
+    <dataTypes />
+    <pous />
+  </types>
+  <instances>
+    <configurations>
+      <configuration name="Device">
+        <resource name="Application">
+          <task name="MainTask" interval="PT0.1S" priority="1">
+            <pouInstance name="PLC_PRG" typeName="">
+              <documentation>
+                <xhtml xmlns="http://www.w3.org/1999/xhtml" />
+              </documentation>
+            </pouInstance>
+            <addData>
+              <data name="http://www.3s-software.com/plcopenxml/tasksettings" handleUnknown="implementation">
+                <TaskSettings KindOfTask="Cyclic" Interval="100" IntervalUnit="ms" WithinSPSTimeSlicing="true">
+                  <Watchdog Enabled="false" TimeUnit="ms" Sensitivity="1" />
+                </TaskSettings>
+              </data>
+              <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                <ObjectId>58c13632-2807-4535-9d66-655e5027131b</ObjectId>
+              </data>
+            </addData>
+          </task>
+          <task name="VISU_TASK" interval="PT0.1S" priority="31">
+            <pouInstance name="VisuElems.Visu_Prg" typeName="">
+              <documentation>
+                <xhtml xmlns="http://www.w3.org/1999/xhtml" />
+              </documentation>
+            </pouInstance>
+            <addData>
+              <data name="http://www.3s-software.com/plcopenxml/tasksettings" handleUnknown="implementation">
+                <TaskSettings KindOfTask="Cyclic" Interval="100" IntervalUnit="ms" WithinSPSTimeSlicing="true">
+                  <Watchdog Enabled="false" TimeUnit="ms" />
+                </TaskSettings>
+              </data>
+              <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                <ObjectId>43eb8992-a936-4dbe-90a4-685695b2615d</ObjectId>
+              </data>
+            </addData>
+          </task>
+          <addData>
+            <data name="http://www.3s-software.com/plcopenxml/pou" handleUnknown="implementation">
+              <pou name="PLC_PRG" pouType="program">
+                <interface>
+                  <localVars>
+                    <variable name="plant">
+                      <type>
+                        <derived name="FB_PlantSim" />
+                      </type>
+                    </variable>
+                    <variable name="ctrl">
+                      <type>
+                        <derived name="FB_TempControl" />
+                      </type>
+                    </variable>
+                    <variable name="sp">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> temperature setpoint, degC rise</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="useSmith">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="FALSE" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> FALSE = PI, TRUE = PI with Smith predictor</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="manualMode">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="FALSE" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> TRUE = operator sets the valve</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="manualOut">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> operator valve position, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="filterOn">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="FALSE" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> measurement filter</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="noiseOn">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="FALSE" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> sensor noise</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="dist">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> input disturbance, % valve</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="gainFactor">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="1.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> plant gain change (1.3 or 0.7)</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="delayFactor">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="1.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> plant delay change (1.3 or 0.7)</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="temp">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> measured temperature rise, degC</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="valve">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> valve command, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="alarm">
+                      <type>
+                        <derived name="FB_Alarm" />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> alarms and interlock</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="ackBtn">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> operator acknowledge</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="resetBtn">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> operator interlock reset</xhtml>
+                      </documentation>
+                    </variable>
+                  </localVars>
+                </interface>
+                <body>
+                  <ST>
+                    <xhtml xmlns="http://www.w3.org/1999/xhtml">// alarms: check the measurement first
+alarm(pv := plant.y, ack := ackBtn, reset := resetBtn);
+
+// controller: reads the measurement from the previous scan
+// interlock forces manual mode with the valve closed (0 %)
+ctrl(sp := sp, pv := plant.y, useSmith := useSmith,
+     manualMode := manualMode OR alarm.interlock,
+     manualOut  := SEL(alarm.interlock, manualOut, 0.0),
+     filterOn := filterOn);
+valve := ctrl.u;
+
+// simulated heat exchanger
+plant(u := valve, dist := dist, gainFactor := gainFactor,
+      delayFactor := delayFactor, noiseOn := noiseOn);
+temp := plant.y;</xhtml>
+                  </ST>
+                </body>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>7e63af0f-e9d2-4ec8-a04c-54beb95eb294</ObjectId>
+                  </data>
+                </addData>
+              </pou>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/pou" handleUnknown="implementation">
+              <pou name="FB_PlantSim" pouType="functionBlock">
+                <interface>
+                  <inputVars>
+                    <variable name="u">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> heating valve position, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="dist">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> input disturbance, % valve</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="gainFactor">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="1.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> 1.3 or 0.7 for the robustness cases</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="delayFactor">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="1.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> 1.3 or 0.7 for the robustness cases</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="noiseOn">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                  </inputVars>
+                  <outputVars>
+                    <variable name="y">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> measured temperature rise, degC</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="yClean">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> measured value without noise</xhtml>
+                      </documentation>
+                    </variable>
+                  </outputVars>
+                  <localVars>
+                    <variable name="K">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="1.5" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> gain, degC per % valve</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="tau">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="50.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> time constant, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="theta">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="15.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> transport delay, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="tauS">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="5.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> sensor lag, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="Ts">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.1" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> scan time, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="buf">
+                      <type>
+                        <array>
+                          <dimension lower="0" upper="399" />
+                          <baseType>
+                            <REAL />
+                          </baseType>
+                        </array>
+                      </type>
+                    </variable>
+                    <variable name="wr">
+                      <type>
+                        <INT />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0" />
+                      </initialValue>
+                    </variable>
+                    <variable name="rd">
+                      <type>
+                        <INT />
+                      </type>
+                    </variable>
+                    <variable name="nd">
+                      <type>
+                        <INT />
+                      </type>
+                    </variable>
+                    <variable name="ud">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="x">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="ys">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="alpha">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="beta">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="seed">
+                      <type>
+                        <DWORD />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="12345" />
+                      </initialValue>
+                    </variable>
+                    <variable name="i">
+                      <type>
+                        <INT />
+                      </type>
+                    </variable>
+                    <variable name="sumU">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                  </localVars>
+                </interface>
+                <body>
+                  <ST>
+                    <xhtml xmlns="http://www.w3.org/1999/xhtml">alpha := EXP(-Ts / tau);
+beta  := EXP(-Ts / tauS);
+
+// delay in samples, limited to the buffer size
+nd := REAL_TO_INT(theta * delayFactor / Ts);
+IF nd &lt; 0 THEN nd := 0; END_IF
+IF nd &gt; 399 THEN nd := 399; END_IF
+
+// delay buffer: store the new input, read the old one
+buf[wr] := u + dist;
+rd := wr - nd;
+IF rd &lt; 0 THEN rd := rd + 400; END_IF
+ud := buf[rd];
+wr := wr + 1;
+IF wr &gt; 399 THEN wr := 0; END_IF
+
+// plant lag and sensor lag
+x  := alpha * x  + (1.0 - alpha) * K * gainFactor * ud;
+ys := beta  * ys + (1.0 - beta)  * x;
+yClean := ys;
+
+// measurement noise, about 0.05 degC standard deviation
+sumU := 0.0;
+FOR i := 1 TO 12 DO
+    seed := seed * DWORD#1664525 + DWORD#1013904223;
+    sumU := sumU + DWORD_TO_REAL(seed) / 4294967296.0;
+END_FOR
+IF noiseOn THEN
+    y := ys + 0.05 * (sumU - 6.0);
+ELSE
+    y := ys;
+END_IF</xhtml>
+                  </ST>
+                </body>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>7a3303d7-0227-4c1c-a919-753721613193</ObjectId>
+                  </data>
+                </addData>
+              </pou>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/pou" handleUnknown="implementation">
+              <pou name="FB_PI" pouType="functionBlock">
+                <interface>
+                  <inputVars>
+                    <variable name="err">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> error = setpoint - measurement (corrected for Smith predictor)</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="Kc">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> controller gain, % valve per degC</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="Ti">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="50.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> integral time, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="outMin">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> output low limit, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="outMax">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="100.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> output high limit, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="manual">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> TRUE = manual mode (controller follows manualOut)</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="manualOut">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> valve position set by the operator, %</xhtml>
+                      </documentation>
+                    </variable>
+                  </inputVars>
+                  <outputVars>
+                    <variable name="u">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> valve command, %</xhtml>
+                      </documentation>
+                    </variable>
+                  </outputVars>
+                  <localVars>
+                    <variable name="Ts">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.1" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> scan time, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="pTerm">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="intg">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> integral term</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="intgNew">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="uCand">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                  </localVars>
+                </interface>
+                <body>
+                  <ST>
+                    <xhtml xmlns="http://www.w3.org/1999/xhtml">pTerm := Kc * err;
+
+IF manual THEN
+    // follow the operator value, so switching back to auto causes no jump
+    intg := manualOut - pTerm;
+    u := LIMIT(outMin, manualOut, outMax);
+ELSE
+    IF Ti &gt; 0.001 THEN
+        intgNew := intg + Kc * err * Ts / Ti;
+    ELSE
+        intgNew := intg;
+    END_IF
+    uCand := pTerm + intgNew;
+
+    // anti-windup: stop integrating while the output is saturated
+    // and the error would push it further into the limit
+    IF (uCand &gt; outMax AND err &gt; 0.0) OR (uCand &lt; outMin AND err &lt; 0.0) THEN
+        ;
+    ELSE
+        intg := intgNew;
+    END_IF
+    u := LIMIT(outMin, pTerm + intg, outMax);
+END_IF</xhtml>
+                  </ST>
+                </body>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>fbd65ae6-cea6-49f9-96a1-8cbd5f0952a4</ObjectId>
+                  </data>
+                </addData>
+              </pou>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/pou" handleUnknown="implementation">
+              <pou name="FB_SmithPredictor" pouType="functionBlock">
+                <interface>
+                  <inputVars>
+                    <variable name="u">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> controller output (valve command), %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="K">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="1.5" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> model gain, degC per % valve</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="tau">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="50.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> model time constant, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="theta">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="15.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> model delay, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="tauS">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="5.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> sensor lag in the model, s</xhtml>
+                      </documentation>
+                    </variable>
+                  </inputVars>
+                  <outputVars>
+                    <variable name="ym0">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> model output without delay</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="ym">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> model output with delay</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="corr">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> correction = ym0 - ym</xhtml>
+                      </documentation>
+                    </variable>
+                  </outputVars>
+                  <localVars>
+                    <variable name="Ts">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.1" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> scan time, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="buf">
+                      <type>
+                        <array>
+                          <dimension lower="0" upper="399" />
+                          <baseType>
+                            <REAL />
+                          </baseType>
+                        </array>
+                      </type>
+                    </variable>
+                    <variable name="wr">
+                      <type>
+                        <INT />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0" />
+                      </initialValue>
+                    </variable>
+                    <variable name="rd">
+                      <type>
+                        <INT />
+                      </type>
+                    </variable>
+                    <variable name="nd">
+                      <type>
+                        <INT />
+                      </type>
+                    </variable>
+                    <variable name="ud">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="x0">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="x1">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="ys0">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="ys1">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="alpha">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="beta">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                  </localVars>
+                </interface>
+                <body>
+                  <ST>
+                    <xhtml xmlns="http://www.w3.org/1999/xhtml">alpha := EXP(-Ts / tau);
+beta  := EXP(-Ts / tauS);
+
+// model delay in samples
+nd := REAL_TO_INT(theta / Ts);
+IF nd &lt; 0 THEN nd := 0; END_IF
+IF nd &gt; 399 THEN nd := 399; END_IF
+
+// delay buffer for the model with delay
+buf[wr] := u;
+rd := wr - nd;
+IF rd &lt; 0 THEN rd := rd + 400; END_IF
+ud := buf[rd];
+wr := wr + 1;
+IF wr &gt; 399 THEN wr := 0; END_IF
+
+// model without delay: plant lag, then sensor lag
+x0  := alpha * x0  + (1.0 - alpha) * K * u;
+ys0 := beta  * ys0 + (1.0 - beta)  * x0;
+
+// model with delay: same, but fed with the delayed input
+x1  := alpha * x1  + (1.0 - alpha) * K * ud;
+ys1 := beta  * ys1 + (1.0 - beta)  * x1;
+
+ym0  := ys0;
+ym   := ys1;
+corr := ym0 - ym;</xhtml>
+                  </ST>
+                </body>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>e401556e-fa8a-4ed7-ba5d-e60d50e1bff4</ObjectId>
+                  </data>
+                </addData>
+              </pou>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/pou" handleUnknown="implementation">
+              <pou name="FB_TempControl" pouType="functionBlock">
+                <interface>
+                  <inputVars>
+                    <variable name="sp">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> temperature setpoint, degC rise</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="pv">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> measured temperature, degC rise</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="useSmith">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> FALSE = PI, TRUE = PI with Smith predictor</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="manualMode">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> TRUE = operator sets the valve</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="manualOut">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> operator valve position, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="filterOn">
+                      <type>
+                        <BOOL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> measurement filter on or off</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="Tf">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="2.0" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> filter time constant, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="KcPI">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.834" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> PI tuning (MATLAB final design)</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="TiPI">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="50.0" />
+                      </initialValue>
+                    </variable>
+                    <variable name="KcSM">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="3.336" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> PI tuning used with the Smith predictor</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="TiSM">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="50.0" />
+                      </initialValue>
+                    </variable>
+                  </inputVars>
+                  <outputVars>
+                    <variable name="u">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> heating valve command, %</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="pvF">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> temperature used by the controller</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="corr">
+                      <type>
+                        <REAL />
+                      </type>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> Smith predictor correction</xhtml>
+                      </documentation>
+                    </variable>
+                  </outputVars>
+                  <localVars>
+                    <variable name="Ts">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.1" />
+                      </initialValue>
+                      <documentation>
+                        <xhtml xmlns="http://www.w3.org/1999/xhtml"> scan time, s</xhtml>
+                      </documentation>
+                    </variable>
+                    <variable name="piPlain">
+                      <type>
+                        <derived name="FB_PI" />
+                      </type>
+                    </variable>
+                    <variable name="piSmith">
+                      <type>
+                        <derived name="FB_PI" />
+                      </type>
+                    </variable>
+                    <variable name="smith">
+                      <type>
+                        <derived name="FB_SmithPredictor" />
+                      </type>
+                    </variable>
+                    <variable name="errPI">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="errSM">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="mo">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="uPrev">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                  </localVars>
+                </interface>
+                <body>
+                  <ST>
+                    <xhtml xmlns="http://www.w3.org/1999/xhtml">// measurement filter (first order), can be switched off
+IF filterOn AND (Tf &gt; 0.0) THEN
+    pvF := pvF + Ts / (Tf + Ts) * (pv - pvF);
+ELSE
+    pvF := pv;
+END_IF
+
+// errors for the two controllers
+errPI := sp - pvF;
+errSM := sp - pvF - smith.corr;   // correction from the previous scan
+
+// value the idle controller follows (keeps switching bumpless)
+IF manualMode THEN
+    mo := manualOut;
+ELSE
+    mo := uPrev;
+END_IF
+
+piPlain(err := errPI, Kc := KcPI, Ti := TiPI,
+        manual := (manualMode OR useSmith), manualOut := mo);
+piSmith(err := errSM, Kc := KcSM, Ti := TiSM,
+        manual := (manualMode OR NOT useSmith), manualOut := mo);
+
+// select the output
+IF manualMode THEN
+    u := LIMIT(0.0, manualOut, 100.0);
+ELSIF useSmith THEN
+    u := piSmith.u;
+ELSE
+    u := piPlain.u;
+END_IF
+uPrev := u;
+
+// run the predictor models with the new valve command
+smith(u := u);
+corr := smith.corr;</xhtml>
+                  </ST>
+                </body>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>e35945e1-1ef1-4b52-a4f9-6208abd7b2c9</ObjectId>
+                  </data>
+                </addData>
+              </pou>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/pou" handleUnknown="implementation">
+              <pou name="FB_Alarm" pouType="functionBlock">
+                <interface>
+                  <inputVars>
+                    <variable name="pv">
+                      <type>
+                        <REAL />
+                      </type>
+                    </variable>
+                    <variable name="ack">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="reset">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="tahLimit">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="15.0" />
+                      </initialValue>
+                    </variable>
+                    <variable name="tahhLimit">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="20.0" />
+                      </initialValue>
+                    </variable>
+                    <variable name="deadband">
+                      <type>
+                        <REAL />
+                      </type>
+                      <initialValue>
+                        <simpleValue value="0.5" />
+                      </initialValue>
+                    </variable>
+                  </inputVars>
+                  <outputVars>
+                    <variable name="high">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="highHigh">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="sensorFault">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="interlock">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="horn">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="state">
+                      <type>
+                        <INT />
+                      </type>
+                    </variable>
+                  </outputVars>
+                  <localVars>
+                    <variable name="tonH">
+                      <type>
+                        <derived name="TON" />
+                      </type>
+                    </variable>
+                    <variable name="tonHH">
+                      <type>
+                        <derived name="TON" />
+                      </type>
+                    </variable>
+                    <variable name="rtAck">
+                      <type>
+                        <derived name="R_TRIG" />
+                      </type>
+                    </variable>
+                    <variable name="rtReset">
+                      <type>
+                        <derived name="R_TRIG" />
+                      </type>
+                    </variable>
+                    <variable name="rtH">
+                      <type>
+                        <derived name="R_TRIG" />
+                      </type>
+                    </variable>
+                    <variable name="rtHH">
+                      <type>
+                        <derived name="R_TRIG" />
+                      </type>
+                    </variable>
+                    <variable name="rtSF">
+                      <type>
+                        <derived name="R_TRIG" />
+                      </type>
+                    </variable>
+                    <variable name="condH">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="condHH">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="anyActive">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                    <variable name="unacked">
+                      <type>
+                        <BOOL />
+                      </type>
+                    </variable>
+                  </localVars>
+                </interface>
+                <body>
+                  <ST>
+                    <xhtml xmlns="http://www.w3.org/1999/xhtml">IF high THEN condH := pv &gt; (tahLimit - deadband);
+ELSE condH := pv &gt; tahLimit; END_IF
+tonH(IN := condH, PT := T#2S);
+high := tonH.Q;
+
+IF highHigh THEN condHH := pv &gt; (tahhLimit - deadband);
+ELSE condHH := pv &gt; tahhLimit; END_IF
+tonHH(IN := condHH, PT := T#2S);
+highHigh := tonHH.Q;
+
+sensorFault := (pv &lt; -5.0) OR (pv &gt; 60.0);
+
+anyActive := high OR highHigh OR sensorFault;
+   rtH(CLK := high);
+   rtHH(CLK := highHigh);
+   rtSF(CLK := sensorFault);
+rtAck(CLK := ack);
+rtReset(CLK := reset);
+
+IF rtH.Q OR rtHH.Q OR rtSF.Q THEN unacked := TRUE; END_IF
+IF rtAck.Q THEN unacked := FALSE; END_IF
+horn := unacked;
+
+IF anyActive THEN
+    IF unacked THEN state := 1; ELSE state := 2; END_IF
+ELSE
+    IF unacked THEN state := 3; ELSE state := 0; END_IF
+END_IF
+
+IF highHigh OR sensorFault THEN interlock := TRUE; END_IF
+IF rtReset.Q AND NOT highHigh AND NOT sensorFault AND (pv &lt; tahLimit) THEN
+    interlock := FALSE;
+END_IF</xhtml>
+                  </ST>
+                </body>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>6900aa37-d117-447f-b760-67699aa69ca7</ObjectId>
+                  </data>
+                </addData>
+              </pou>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/libraries" handleUnknown="implementation">
+              <Libraries>
+                <Library Name="#IoStandard" Namespace="IoStandard" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="true" DefaultResolution="IoStandard, 3.5.22.0 (System)" />
+                <Library Name="#3SLicense" Namespace="_3S_LICENSE" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="3SLicense, 0.0.0.0 (CODESYS)" ResolverGuid="97c3b452-d9fa-4ac2-9d0c-3d420aa6d95b" />
+                <Library Name="#CAA Device Diagnosis" Namespace="DED" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="CAA Device Diagnosis, 3.5.22.0 (CAA Technical Workgroup)" />
+                <Library Name="#Standard" Namespace="Standard" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="false" LinkAllContent="false" DefaultResolution="Standard, * (System)" />
+                <Library Name="#BreakpointLogging" Namespace="BPLog" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="Breakpoint Logging Functions, * (3S - Smart Software Solutions GmbH)" />
+                <Library Name="#System_VisuElems" Namespace="VisuElems" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElems, 4.10.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemMeter" Namespace="VisuElemMeter" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemMeter, 4.10.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemsSpecialControls" Namespace="VisuElemsSpecialControls" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemsSpecialControls, 4.7.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemsWinControls" Namespace="VisuElemsWinControls" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemsWinControls, 4.10.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemTextEditor" Namespace="VisuElemTextEditor" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemTextEditor, 4.8.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemTrace" Namespace="VisuElemTrace" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemTrace, 4.10.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuNativeControl" Namespace="VisuNativeControl" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuNativeControl, 4.9.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemsAlarm" Namespace="VisuElemsAlarm" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemsAlarm, 4.10.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemCamDisplayer" Namespace="VisuElemCamDisplayer" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemCamDisplayer, 4.7.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElem3DPath" Namespace="VisuElem3DPath" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElem3DPath, 4.7.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemsDateTime" Namespace="VisuElemsDateTime" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemsDateTime, 4.9.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuElemXYChart" Namespace="VisuElemXYChart" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuElemXYChart, 4.10.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <Library Name="#System_VisuInputs" Namespace="VisuInputs" HideWhenReferencedAsDependency="false" PublishSymbolsInContainer="false" SystemLibrary="true" LinkAllContent="false" DefaultResolution="VisuInputs, 4.7.0.0 (System)" ResolverGuid="2717eb6a-dd07-4c66-8d8d-cacebd7b18ae" />
+                <PlaceholderRedirections>
+                  <PlaceholderRedirection Placeholder="Standard" Redirection="Standard, 3.5.22.0 (System)" />
+                  <PlaceholderRedirection Placeholder="StringUtils" Redirection="StringUtils, 3.5.22.0 (System)" />
+                  <PlaceholderRedirection Placeholder="Standard64" Redirection="Standard64, 3.5.20.0 (System)" />
+                  <PlaceholderRedirection Placeholder="Collections" Redirection="Collections, 3.5.17.0 (System)" />
+                  <PlaceholderRedirection Placeholder="Util" Redirection="Util, 3.5.22.0 (System)" />
+                </PlaceholderRedirections>
+                <addData>
+                  <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+                    <ObjectId>1041f92c-7c53-49b7-827c-c54cbb731cb8</ObjectId>
+                  </data>
+                </addData>
+              </Libraries>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/buildproperties" handleUnknown="implementation">
+              <BuildProperties>
+                <CompilerDefines>GENERATE_OVERLAY_VISU,VISU_USEPROPERTYINFO</CompilerDefines>
+              </BuildProperties>
+            </data>
+            <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+              <ObjectId>0c82cef1-7fbd-4359-b918-907e69432b23</ObjectId>
+            </data>
+          </addData>
+        </resource>
+        <addData>
+          <data name="Device" handleUnknown="discard">
+            <Device xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="">
+              <DeviceType>
+                <DeviceIdentification>
+                  <Type>4096</Type>
+                  <Id>0000 0004</Id>
+                  <Version>3.5.22.40</Version>
+                </DeviceIdentification>
+                <Connector moduleType="256" interface="Common.PCI" connectorId="0">
+                  <HostParameterSet />
+                </Connector>
+                <Connector moduleType="769" interface="SafetyInterface" connectorId="1">
+                  <HostParameterSet />
+                </Connector>
+                <DeviceParameterSet />
+                <DriverInfo />
+              </DeviceType>
+            </Device>
+          </data>
+          <data name="configurations" handleUnknown="discard">
+            <configurations />
+          </data>
+          <data name="http://www.3s-software.com/plcopenxml/objectid" handleUnknown="discard">
+            <ObjectId>fba9a23e-8200-45a2-b2a0-f0bfc848c930</ObjectId>
+          </data>
+        </addData>
+      </configuration>
+    </configurations>
+  </instances>
+  <addData>
+    <data name="http://www.3s-software.com/plcopenxml/projectstructure" handleUnknown="discard">
+      <ProjectStructure>
+        <Object Name="Device" ObjectId="fba9a23e-8200-45a2-b2a0-f0bfc848c930">
+          <Object Name="Application" ObjectId="0c82cef1-7fbd-4359-b918-907e69432b23">
+            <Object Name="Library Manager" ObjectId="1041f92c-7c53-49b7-827c-c54cbb731cb8" />
+            <Object Name="PLC_PRG" ObjectId="7e63af0f-e9d2-4ec8-a04c-54beb95eb294" />
+            <Object Name="MainTask" ObjectId="58c13632-2807-4535-9d66-655e5027131b" />
+            <Object Name="VISU_TASK" ObjectId="43eb8992-a936-4dbe-90a4-685695b2615d" />
+            <Object Name="FB_PlantSim" ObjectId="7a3303d7-0227-4c1c-a919-753721613193" />
+            <Object Name="FB_PI" ObjectId="fbd65ae6-cea6-49f9-96a1-8cbd5f0952a4" />
+            <Object Name="FB_SmithPredictor" ObjectId="e401556e-fa8a-4ed7-ba5d-e60d50e1bff4" />
+            <Object Name="FB_TempControl" ObjectId="e35945e1-1ef1-4b52-a4f9-6208abd7b2c9" />
+            <Object Name="FB_Alarm" ObjectId="6900aa37-d117-447f-b760-67699aa69ca7" />
+          </Object>
+        </Object>
+      </ProjectStructure>
+    </data>
+  </addData>
+</project>
