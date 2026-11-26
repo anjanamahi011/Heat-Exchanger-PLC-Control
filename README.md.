@@ -51,9 +51,9 @@ Setpoint step of 10 °C. The numbers are measured on the true plant output (befo
 ![PLC step responses](plc_step_responses.png)
 
 What this shows:
--  Overshoot and settling-time results from the PLC closely match the MATLAB simulation across the tested cases.
+- Overshoot and settling-time results from the PLC closely match the MATLAB simulation across the tested cases.
 - With the nominal model, the Smith predictor settles about 28% faster than PI (44.8 s vs 62.7 s). The IAE values are reported for different recording durations and should not be interpreted as a direct quantitative comparison.
-- - With a 30 % dead-time error the Smith predictor is still faster, but its overshoot (27.8 %) is much higher than PI (12.7 %). The Smith loop is more sensitive to model mismatch with this tuning. The two controllers were not tuned for equal robustness.
+- With a 30 % dead-time error the Smith predictor is still faster, but its overshoot (27.8 %) is much higher than PI (12.7 %). The Smith loop is more sensitive to model mismatch with this tuning. The two controllers were not tuned for equal robustness.
 ## Alarm and interlock tests (on the running PLC)
 
 | Test | Result |
@@ -81,7 +81,7 @@ The design report is `PLC_Heat_Exchanger_Control_Design_Report.docx`.
 
 - **Simulated plant.** The heat exchanger is simulated inside the PLC. There is no real I/O.
 - **Safety scope.** The alarm and interlock functions are demonstrated in a simulated PLC environment and are not intended to represent a safety-certified industrial protection system.
-- **Scan time.** The soft PLC runs on Windows, so the actual scan period was about 108 ms (median) instead of 100 ms.The plant model uses a fixed step of 0.1 s, so all metrics are computed in simulation time. In wall-clock time the responses look about 8 % slower.
+- **Scan time.** The soft PLC runs on Windows, so the actual scan period was about 108 ms (median) instead of 100 ms. The plant model uses a fixed step of 0.1 s, so all metrics are computed in simulation time. In wall-clock time the responses look about 8 % slower.
 - **IAE windows differ.** MATLAB integrates 800 s. The PLC recordings were shorter (about 113 s to 144 s after the step), so PLC IAE values are slightly lower.
 - **Cases not repeated on the PLC:** gain +30 %, gain -30 %, dead time -30 %. These were only run in MATLAB.
 - **One-scan lag.** The Smith predictor error uses a one-scan-old model value.
